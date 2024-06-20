@@ -18,6 +18,18 @@ elif [ -n "$WEBHOOK_SECRET" ]; then
     webhook_secret=$WEBHOOK_SECRET
 fi
 
+if [ -n "$INPUT_WEBHOOK_CF_CLIENT_SECRET" ]; then
+    webhook_cf_client_secret=$INPUT_WEBHOOK_CF_CLIENT_SECRET
+elif [ -n "$WEBHOOK_CF_CLIENT_SECRET" ]; then
+    webhook_cf_client_secret=$WEBHOOK_CF_CLIENT_SECRET
+fi
+
+if [ -n "$INPUT_WEBHOOK_CF_CLIENT_ID" ]; then
+    webhook_cf_client_id=$INPUT_WEBHOOK_CF_CLIENT_ID
+elif [ -n "$WEBHOOK_CF_CLIENT_ID" ]; then
+    webhook_cf_client_id=$WEBHOOK_CF_CLIENT_ID
+fi
+
 if [ -n "$INPUT_WEBHOOK_TYPE" ]; then
     webhook_type=$INPUT_WEBHOOK_TYPE
 elif [ -n "$WEBHOOK_TYPE" ]; then
@@ -46,6 +58,12 @@ if [ -n "$INPUT_VERIFY_SSL" ]; then
     verify_ssl=$INPUT_VERIFY_SSL
 elif [ -n "$VERIFY_SSL" ]; then
     verify_ssl=$VERIFY_SSL
+fi
+
+if [ -n "$INPUT_FOLLOW_REDIRECT" ]; then
+    follow_redirect=$INPUT_FOLLOW_REDIRECT
+elif [ -n "$FOLLOW_REDIRECT" ]; then
+    follow_redirect=$FOLLOW_REDIRECT
 fi
 
 if [ -n "$INPUT_TIMEOUT" ]; then
@@ -173,6 +191,8 @@ if [ -n "$webhook_auth_type" ] && [ "$webhook_auth_type" == "bearer" ]; then
     auth_type="bearer"
 elif [ -n "$webhook_auth_type" ] && [ "$webhook_auth_type" == "header" ]; then
     auth_type="header"
+elif [ -n "$webhook_auth_type" ] && [ "$webhook_auth_type" == "cloudflare" ]; then
+    auth_type="cloudflare"
 else
     auth_type="basic"
 fi
@@ -218,7 +238,7 @@ if [ "$verbose" = true ]; then
     echo "-H 'X-Hub-Signature-256: sha256=$WEBHOOK_SIGNATURE_256' \\"
     echo "-H 'X-GitHub-Delivery: $REQUEST_ID' \\"
     echo "-H 'X-GitHub-Event: $EVENT_NAME' \\"
-    echo "--data '$WEBHOOK_DATA'"
+    echo "--data '$WEBHOOK_DATA' '$WEBHOOK_ENDPOINT'"
 fi
 
 set +e
@@ -262,6 +282,18 @@ elif [ -n "$webhook_auth" ] && [ "$auth_type" == "header" ]; then
         -H "X-GitHub-Event: $EVENT_NAME" \
         --data "$WEBHOOK_DATA" $WEBHOOK_ENDPOINT)
     fi
+elif [ -n "$webhook_cf_client_id" ] && [ -n "$webhook_cf_client_secret" ] && [ "$auth_type" == "cloudflare" ]; then
+    response=$(curl $options \
+    -H "CF-Access-Client-Id: $webhook_cf_client_id" \
+    -H "CF-Access-Client-Secret: $webhook_cf_client_secret" \
+    -H "Authorization: $webhook_auth" \
+    -H "Content-Type: $CONTENT_TYPE" \
+    -H "User-Agent: GitHub-Hookshot/760256b" \
+    -H "X-Hub-Signature: sha1=$WEBHOOK_SIGNATURE" \
+    -H "X-Hub-Signature-256: sha256=$WEBHOOK_SIGNATURE_256" \
+    -H "X-GitHub-Delivery: $REQUEST_ID" \
+    -H "X-GitHub-Event: $EVENT_NAME" \
+    --data "$WEBHOOK_DATA" $WEBHOOK_ENDPOINT)
 else
     response=$(curl $options \
     -H "Content-Type: $CONTENT_TYPE" \

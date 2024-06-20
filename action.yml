@@ -9,10 +9,14 @@ inputs:
   webhook_auth:
     description: 'Optional. The BASIC auth credentials (a "username:password" string) OR a bearer access token OR a custom header to be used for authentication'
   webhook_auth_type:
-    description: 'Optional. What type of authentication to use for invoking the webhook URL. Valid values are "basic", "bearer", "header". Defaults to "basic" if not specified.'
+    description: 'Optional. What type of authentication to use for invoking the webhook URL. Valid values are "basic", "bearer", "header", "cloudflare". Defaults to "basic" if not specified.'
     default: "basic"
   webhook_type: 
     description: 'json | form-urlencoded | json-extended'
+  webhook_cf_client_id:
+    description: "Optional. CF-Access-Client-Id header value"
+  webhook_cf_client_secret:
+    description: "Optional. CF-Access-Client-Secret header value"
   verbose:
     description: 'Optional. Set to true to enable verbose output. Warning: this might lead to domain and IP leaking, as well as other security issues as the logs are public.'
   silent:
@@ -38,7 +42,7 @@ outputs:
 runs:
   using: 'docker'
   # image: 'Dockerfile'
-  image: 'docker://ghcr.io/distributhor/workflow-webhook-container:v3.0.7'
+  image: 'docker://ghcr.io/olivierlemoal/workflow-webhook:v3.0.8'
 
 branding:
   icon: 'terminal'
